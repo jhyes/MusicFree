@@ -34,7 +34,7 @@ function HomeDrawer(props: any) {
         },
         {
             icon: 'language-javascript',
-            title: '插件设置',
+            title: '插件管理',
             onPress: () => {
                 navigateToSetting('plugin');
             },
@@ -126,7 +126,10 @@ function HomeDrawer(props: any) {
                         // 仅安卓生效
                         BackHandler.exitApp();
                     }}>
-                    <ListItem.ListItemIcon icon={'home-outline'} width={rpx(48)} />
+                    <ListItem.ListItemIcon
+                        icon={'home-outline'}
+                        width={rpx(48)}
+                    />
                     <ListItem.Content title={'返回桌面'} />
                 </ListItem>
                 <ListItem

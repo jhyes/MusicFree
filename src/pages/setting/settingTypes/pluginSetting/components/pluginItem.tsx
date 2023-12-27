@@ -12,6 +12,7 @@ import {StyleSheet, View} from 'react-native';
 import ThemeText from '@/components/base/themeText';
 import IconTextButton from '@/components/base/iconTextButton';
 import {PluginMeta} from '@/core/pluginMeta';
+import ThemeSwitch from '@/components/base/switch';
 
 interface IPluginItemProps {
     plugin: Plugin;
@@ -164,10 +165,32 @@ export default function PluginItem(props: IPluginItemProps) {
                 },
             ]}>
             <View style={styles.header}>
-                <ThemeText fontSize="title">{plugin.name}</ThemeText>
-                <ThemeText style={styles.version} fontSize="subTitle">
-                    (版本号: {plugin.instance.version})
+                <ThemeText
+                    style={styles.headerPluginName}
+                    numberOfLines={1}
+                    fontSize="title">
+                    {plugin.name}
                 </ThemeText>
+                <ThemeSwitch
+                    value={plugin.state === 'disabled' ? false : true}
+                    onValueChange={val => {
+                        PluginManager.setPluginEnabled(plugin, val);
+                    }}
+                />
+            </View>
+            <View style={styles.description}>
+                <ThemeText fontSize="subTitle" fontColor="textSecondary">
+                    版本号: {plugin.instance.version}
+                </ThemeText>
+                {plugin.instance.author ? (
+                    <ThemeText
+                        fontSize="subTitle"
+                        fontColor="textSecondary"
+                        numberOfLines={1}
+                        style={styles.author}>
+                        作者: {plugin.instance.author}
+                    </ThemeText>
+                ) : null}
             </View>
             <View style={styles.contents}>
                 {options.map((it, index) =>
@@ -237,13 +260,23 @@ const styles = StyleSheet.create({
         marginTop: rpx(36),
     },
     header: {
-        marginBottom: rpx(24),
         paddingHorizontal: rpx(16),
         flexDirection: 'row',
         alignItems: 'center',
     },
-    version: {
+    headerPluginName: {
+        flexShrink: 1,
+        flexGrow: 1,
+    },
+    author: {
         marginLeft: rpx(24),
+        flexShrink: 1,
+        flexGrow: 1,
+    },
+    description: {
+        marginHorizontal: rpx(16),
+        marginVertical: rpx(24),
+        flexDirection: 'row',
     },
     contents: {
         flexDirection: 'row',

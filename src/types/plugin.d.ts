@@ -33,6 +33,8 @@ declare namespace IPlugin {
         key: string;
         /** 名称 */
         name?: string;
+        /** 提示文案 */
+        hint?: string;
     }
 
     interface IAlbumInfoResult {
@@ -44,6 +46,12 @@ declare namespace IPlugin {
     interface ISheetInfoResult {
         isEnd?: boolean;
         sheetItem?: IMusic.IMusicSheetItemBase;
+        musicList?: IMusic.IMusicItem[];
+    }
+
+    interface ITopListInfoResult {
+        isEnd?: boolean;
+        topListItem?: IMusic.IMusicSheetItem;
         musicList?: IMusic.IMusicItem[];
     }
 
@@ -70,6 +78,8 @@ declare namespace IPlugin {
         supportedSearchType?: ICommon.SupportMediaType[];
         /** 插件缓存控制 */
         cacheControl?: 'cache' | 'no-cache' | 'no-store';
+        /** 插件作者 */
+        author?: string;
         /** 用户自定义输入 */
         userVariables?: IUserVariable[];
         /** 提示文本 */
@@ -112,11 +122,11 @@ declare namespace IPlugin {
         ) => Promise<IMusic.IMusicItem | null>;
         /** 获取榜单 */
         getTopLists?: () => Promise<IMusic.IMusicSheetGroupItem[]>;
-        // todo:分页
         /** 获取榜单详情 */
         getTopListDetail?: (
             topListItem: IMusic.IMusicSheetItemBase,
-        ) => Promise<ICommon.WithMusicList<IMusic.IMusicSheetItemBase>>;
+            page: number,
+        ) => Promise<ITopListInfoResult>;
         /** 获取热门歌单tag */
         getRecommendSheetTags?: () => Promise<IGetRecommendSheetTagsResult>;
         /** 歌单列表 */
@@ -141,5 +151,6 @@ declare namespace IPlugin {
     export type IPluginMeta = {
         order: number;
         userVariables: Record<string, string>;
+        enabled?: boolean;
     };
 }
