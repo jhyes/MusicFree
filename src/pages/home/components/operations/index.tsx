@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet} from 'react-native';
 import rpx from '@/utils/rpx';
-import ActionButton from './ActionButton';
+import ActionButton from '../ActionButton';
 import {ROUTE_PATH, useNavigate} from '@/entry/router';
 import {ScrollView} from 'react-native-gesture-handler';
 

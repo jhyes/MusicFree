@@ -30,8 +30,11 @@ function createSwitch(
     callback?: (newValue: boolean) => void,
 ) {
     const onPress = () => {
-        Config.set(changeKey, !value);
-        callback?.(!value);
+        if (callback) {
+            callback(!value);
+        } else {
+            Config.set(changeKey, !value);
+        }
     };
     return {
         title,
@@ -154,6 +157,11 @@ export default function BasicSetting() {
                         input: '输入歌曲ID',
                         search: '搜索歌词',
                     },
+                ),
+                createSwitch(
+                    '通知栏显示关闭按钮 (重启后生效)',
+                    'setting.basic.showExitOnNotification',
+                    basicSetting?.showExitOnNotification ?? false,
                 ),
             ],
         },
@@ -310,6 +318,7 @@ export default function BasicSetting() {
                     ),
                     onPress() {
                         showPanel('SimpleInput', {
+                            title: '设置缓存',
                             placeholder: '输入缓存占用上限，100M-8192M，单位M',
                             onOk(text, closePanel) {
                                 let val = parseInt(text);
@@ -499,25 +508,38 @@ function LyricSetting() {
 
     const colors = useColors();
 
+    const autoSearchLyric = createSwitch(
+        '歌词缺失时自动搜索歌词',
+        'setting.lyric.autoSearchLyric',
+        lyricSetting?.autoSearchLyric ?? false,
+    );
+
     const openStatusBarLyric = createSwitch(
         '开启桌面歌词',
         'setting.lyric.showStatusBarLyric',
         lyricSetting?.showStatusBarLyric ?? false,
-        newValue => {
-            if (newValue) {
-                LyricUtil.showStatusBarLyric(
-                    LyricManager.getCurrentLyric()?.lrc ?? 'MusicFree',
-                    lyricSetting ?? {},
-                );
-                // setTimeout(() => {
-                //     // LyricUtil.setStatusBarLyricText(
-                //     //     `xxxxx${Date.now()}`,
-                //     // );
-                //     LyricUtil.setStatusBarLyricTop(-0.1)
-                // }, 2000);
-            } else {
-                LyricUtil.hideStatusBarLyric();
-            }
+        async newValue => {
+            try {
+                if (newValue) {
+                    const hasPermission =
+                        await LyricUtil.checkSystemAlertPermission();
+
+                    if (hasPermission) {
+                        LyricUtil.showStatusBarLyric(
+                            LyricManager.getCurrentLyric()?.lrc ?? 'MusicFree',
+                            lyricSetting ?? {},
+                        );
+                        Config.set('setting.lyric.showStatusBarLyric', true);
+                    } else {
+                        LyricUtil.requestSystemAlertPermission().finally(() => {
+                            Toast.warn('无悬浮窗权限');
+                        });
+                    }
+                } else {
+                    LyricUtil.hideStatusBarLyric();
+                    Config.set('setting.lyric.showStatusBarLyric', false);
+                }
+            } catch {}
         },
     );
 
@@ -544,6 +566,13 @@ function LyricSetting() {
 
     return (
         <View>
+            <ListItem
+                withHorizonalPadding
+                heightType="small"
+                onPress={autoSearchLyric.onPress}>
+                <ListItem.Content title={autoSearchLyric.title} />
+                {autoSearchLyric.right}
+            </ListItem>
             <ListItem
                 withHorizonalPadding
                 heightType="small"
@@ -621,10 +650,10 @@ function LyricSetting() {
                     minimumTrackTintColor={colors.primary}
                     maximumTrackTintColor={colors.text ?? '#999999'}
                     thumbTintColor={colors.primary}
-                    minimumValue={8}
+                    minimumValue={Math.round(rpx(18))}
                     step={0.5}
-                    maximumValue={24}
-                    value={lyricSetting?.fontSize ?? 14}
+                    maximumValue={Math.round(rpx(56))}
+                    value={lyricSetting?.fontSize ?? Math.round(rpx(24))}
                     onValueChange={val => {
                         if (lyricSetting?.showStatusBarLyric) {
                             LyricUtil.setStatusBarLyricFontSize(val);

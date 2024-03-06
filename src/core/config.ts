@@ -56,6 +56,8 @@ interface IConfig {
             notCheckPluginVersion: boolean;
             /** 关联歌词方式 */
             associateLyricType: 'input' | 'search';
+            // 是否展示退出按钮
+            showExitOnNotification: boolean;
         };
         /** 歌词 */
         lyric: {
@@ -67,6 +69,10 @@ interface IConfig {
             backgroundColor: string;
             widthPercent: number;
             fontSize: number;
+            // 详情页的字体大小
+            detailFontSize: number;
+            // 自动搜索歌词
+            autoSearchLyric: boolean;
         };
 
         /** 主题 */
@@ -75,8 +81,13 @@ interface IConfig {
             backgroundOpacity: number;
             backgroundBlur: number;
             colors: CustomizedColors;
+            customColors?: CustomizedColors;
             followSystem: boolean;
             selectedTheme: string;
+        };
+
+        backup: {
+            resumeMode: 'append' | 'overwrite';
         };
 
         plugin: {

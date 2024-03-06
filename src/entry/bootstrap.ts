@@ -1,15 +1,17 @@
-import MusicQueue from '@/core/musicQueue';
 import MusicSheet from '@/core/musicSheet';
 import {check, PERMISSIONS, request} from 'react-native-permissions';
-import TrackPlayer, {Capability} from 'react-native-track-player';
+import RNTrackPlayer, {
+    AppKilledPlaybackBehavior,
+    Capability,
+} from 'react-native-track-player';
 import 'react-native-get-random-values';
 import Config from '@/core/config';
 import RNBootSplash from 'react-native-bootsplash';
 import pathConst from '@/constants/pathConst';
 import {checkAndCreateDir} from '@/utils/fileUtils';
 import {errorLog, trace} from '@/utils/log';
-import MediaMeta from '@/core/mediaMeta';
-import Cache from '@/core/cache';
+import MediaMeta from '@/core/mediaMeta.old';
+import Cache from '@/core/cache.old';
 import PluginManager from '@/core/pluginManager';
 import Network from '@/core/network';
 import {ImgAsset} from '@/constants/assetsConst';
@@ -17,9 +19,11 @@ import LocalMusicSheet from '@/core/localMusicSheet';
 import {Linking} from 'react-native';
 import Theme from '@/core/theme';
 import LyricManager from '@/core/lyricManager';
-import {getStorage, setStorage} from '@/utils/storage';
 import Toast from '@/utils/toast';
 import {localPluginHash, supportLocalMediaType} from '@/constants/commonConst';
+import TrackPlayer from '@/core/trackPlayer';
+import musicHistory from '@/core/musicHistory';
+import PersistStatus from '@/core/persistStatus';
 
 /** app加载前执行
  * 1. 检查权限
@@ -52,11 +56,12 @@ async function _bootstrap() {
         MediaMeta.setup(),
         MusicSheet.setup(),
         Network.setup(),
+        musicHistory.setupMusicHistory(),
     ]);
     trace('配置初始化完成');
     // 加载插件
     try {
-        await TrackPlayer.setupPlayer({
+        await RNTrackPlayer.setupPlayer({
             maxCacheSize:
                 Config.get('setting.basic.maxCacheSize') ?? 1024 * 1024 * 512,
         });
@@ -68,35 +73,39 @@ async function _bootstrap() {
             throw e;
         }
     }
-    await TrackPlayer.updateOptions({
+
+    const capabilities = Config.get('setting.basic.showExitOnNotification')
+        ? [
+              Capability.Play,
+              Capability.Pause,
+              Capability.SkipToNext,
+              Capability.SkipToPrevious,
+              Capability.Stop,
+          ]
+        : [
+              Capability.Play,
+              Capability.Pause,
+              Capability.SkipToNext,
+              Capability.SkipToPrevious,
+          ];
+    await RNTrackPlayer.updateOptions({
         icon: ImgAsset.logoTransparent,
-        alwaysPauseOnInterruption: true,
         progressUpdateEventInterval: 1,
-        capabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
-        ],
-        compactCapabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
-        ],
-        notificationCapabilities: [
-            Capability.Play,
-            Capability.Pause,
-            Capability.SkipToNext,
-            Capability.SkipToPrevious,
-        ],
+        android: {
+            alwaysPauseOnInterruption: true,
+            appKilledPlaybackBehavior:
+                AppKilledPlaybackBehavior.ContinuePlayback,
+        },
+        capabilities: capabilities,
+        compactCapabilities: capabilities,
+        notificationCapabilities: [...capabilities, Capability.SeekTo],
     });
     trace('播放器初始化完成');
     await Cache.setup();
     trace('缓存初始化完成');
     await PluginManager.setup();
     trace('插件初始化完成');
-    await MusicQueue.setup();
+    await TrackPlayer.setupTrackPlayer();
     trace('播放列表初始化完成');
     await LocalMusicSheet.setup();
     trace('本地音乐初始化完成');
@@ -140,11 +149,10 @@ async function extraMakeup() {
     // 自动更新
     try {
         if (Config.get('setting.basic.autoUpdatePlugin')) {
-            const lastUpdated =
-                (await getStorage('pluginLastupdatedTime')) || 0;
+            const lastUpdated = PersistStatus.get('app.pluginUpdateTime') || 0;
             const now = Date.now();
             if (Math.abs(now - lastUpdated) > 86400000) {
-                setStorage('pluginLastupdatedTime', now);
+                PersistStatus.set('app.pluginUpdateTime', now);
                 const plugins = PluginManager.getValidPlugins();
                 for (let i = 0; i < plugins.length; ++i) {
                     const srcUrl = plugins[i].instance.srcUrl;
@@ -159,7 +167,18 @@ async function extraMakeup() {
     async function handleLinkingUrl(url: string) {
         // 插件
         try {
-            if (url.endsWith('.js')) {
+            if (url.startsWith('musicfree://install/')) {
+                const plugins = url
+                    .slice(20)
+                    .split(',')
+                    .map(decodeURIComponent);
+                await Promise.all(
+                    plugins.map(it =>
+                        PluginManager.installPluginFromUrl(it).catch(() => {}),
+                    ),
+                );
+                Toast.success('安装成功~');
+            } else if (url.endsWith('.js')) {
                 PluginManager.installPlugin(url, {
                     notCheckVersion: Config.get(
                         'setting.basic.notCheckPluginVersion',
@@ -179,7 +198,7 @@ async function extraMakeup() {
                 )?.instance?.importMusicItem?.(url);
                 console.log(musicItem);
                 if (musicItem) {
-                    MusicQueue.play(musicItem);
+                    TrackPlayer.play(musicItem);
                 }
             }
         } catch {}
@@ -197,6 +216,6 @@ async function extraMakeup() {
     }
 
     if (Config.get('setting.basic.autoPlayWhenAppStart')) {
-        MusicQueue.play();
+        TrackPlayer.play();
     }
 }

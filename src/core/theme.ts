@@ -32,7 +32,7 @@ export const lightTheme = {
         success: '#08A34C',
         danger: '#FC5F5F',
         info: '#0A95C8',
-        card: '#e0e0e033',
+        card: '#e2e2e288',
     },
 };
 
@@ -60,7 +60,7 @@ export const darkTheme = {
         success: '#08A34C',
         danger: '#FC5F5F',
         info: '#0A95C8',
-        card: '#33333366',
+        card: '#33333388',
     },
 };
 
@@ -163,7 +163,7 @@ function setColors(colors: Partial<CustomizedColors>) {
                 ...colors,
             },
         };
-
+        Config.set('setting.theme.customColors', newTheme.colors);
         Config.set('setting.theme.colors', newTheme.colors);
         themeStore.setValue(newTheme);
     }

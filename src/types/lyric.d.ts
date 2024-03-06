@@ -5,8 +5,12 @@ declare namespace ILyric {
     }
 
     export interface ILyricSource {
+        /** @deprecated 歌词url */
         lrc?: string;
+        /** 纯文本格式歌词 */
         rawLrc?: string;
+        /** 纯文本格式的翻译 */
+        translation?: string;
     }
 
     export interface IParsedLrcItem {

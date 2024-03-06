@@ -1,29 +1,33 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleSheet} from 'react-native';
 
 import NavBar from './components/navBar';
-import Operations from './components/operations';
-import MySheets from './components/mySheets';
 import MusicBar from '@/components/musicBar';
 import {createDrawerNavigator} from '@react-navigation/drawer';
 import HomeDrawer from './components/drawer';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import StatusBar from '@/components/base/statusBar';
-import useOrientation from '@/hooks/useOrientation';
 import HorizonalSafeAreaView from '@/components/base/horizonalSafeAreaView';
 import globalStyle from '@/constants/globalStyle';
-import Divider from '@/components/base/divider';
 import Theme from '@/core/theme';
+import HomeBody from './components/homeBody';
+import HomeBodyHorizonal from './components/homeBodyHorizonal';
+import useOrientation from '@/hooks/useOrientation';
 
 function Home() {
+    const orientation = useOrientation();
+
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.appWrapper}>
             <HomeStatusBar />
             <HorizonalSafeAreaView style={globalStyle.flex1}>
                 <>
                     <NavBar />
-                    <Divider />
-                    <Body />
+                    {orientation === 'vertical' ? (
+                        <HomeBody />
+                    ) : (
+                        <HomeBodyHorizonal />
+                    )}
                 </>
             </HorizonalSafeAreaView>
             <MusicBar />
@@ -42,19 +46,18 @@ function HomeStatusBar() {
     );
 }
 
-function Body() {
-    const orientation = useOrientation();
-    return (
-        <View
-            style={[
-                styles.appWrapper,
-                orientation === 'horizonal' ? styles.flexRow : null,
-            ]}>
-            <Operations orientation={orientation} />
-            <MySheets />
-        </View>
-    );
-}
+// function Body() {
+//     const orientation = useOrientation();
+//     return (
+//         <ScrollView
+//             style={[
+//                 styles.appWrapper,
+//                 orientation === 'horizonal' ? styles.flexRow : null,
+//             ]}>
+//             <Operations orientation={orientation} />
+//         </ScrollView>
+//     );
+// }
 
 const LeftDrawer = createDrawerNavigator();
 export default function App() {
